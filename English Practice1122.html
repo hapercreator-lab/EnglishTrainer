@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <title>English Trainer</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: #121214;
+            color: #ffffff;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            padding: 16px;
+            max-width: 480px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            color: #4895ef;
+            text-align: center;
+            font-size: 1.5rem;
+            margin-bottom: 16px;
+        }
+
+        /* Navigace dole */
+        .nav {
+            display: flex;
+            justify-content: space-around;
+            background-color: #1e1e24;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: 12px;
+            border-top: 1px solid #29292e;
+            z-index: 100;
+        }
+
+        .nav button {
+            background: none;
+            border: none;
+            color: #a8a8b3;
+            font-size: 0.9rem;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .nav button.active {
+            color: #4895ef;
+        }
+
+        .section {
+            display: none;
+            flex: 1;
+            padding-bottom: 70px;
+        }
+
+        .section.active {
+            display: block;
+        }
+
+        /* Kartička na procvičování */
+        .card {
+            background-color: #1e1e24;
+            border: 2px solid #4895ef;
+            border-radius: 16px;
+            height: 260px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        .card-badges {
+            position: absolute;
+            top: 12px;
+            left: 12px;
+            right: 12px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .badge {
+            background-color: #29292e;
+            color: #4895ef;
+            font-size: 0.75rem;
+            font-weight: bold;
+            padding: 4px 8px;
+            border-radius: 6px;
+            border: 1px solid #4895ef;
+        }
+
+        .badge-pos {
+            color: #04d361;
+            border-color: #04d361;
+        }
+
+        .card .en {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #ffffff;
+            cursor: pointer;
+            margin-bottom: 12px;
+        }
+
+        .card .cz {
+            font-size: 1.5rem;
+            color: #04d361;
+            margin-top: 10px;
+            display: none;
+            cursor: pointer;
+        }
+
+        .btn-audio {
+            background-color: #4895ef;
+            color: #ffffff;
+            border: none;
+            padding: 10px 18px;
+            border-radius: 10px;
+            font-size: 0.95rem;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 4px;
+        }
+
+        .hint {
+            font-size: 0.75rem;
+            color: #7c7c8a;
+            margin-top: 12px;
+        }
+
+        /* Formulář a vstupní pole */
+        .form-group {
+            margin-bottom: 14px;
+        }
+
+        label {
+            display: block;
+            font-size: 0.85rem;
+            color: #c4c4cc;
+            margin-bottom: 6px;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 14px;
+            background-color: #1e1e24;
+            border: 1px solid #29292e;
+            color: white;
+            border-radius: 10px;
+            font-size: 1rem;
+            outline: none;
+        }
+
+        input:focus, select:focus {
+            border-color: #4895ef;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 14px;
+            background-color: #4895ef;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+
+        .actions {
+            display: flex;
+            gap: 12px;
+        }
+
+        .btn-wrong { background-color: #e5484d; }
+        .btn-correct { background-color: #04d361; color: #0d1117; }
+
+        /* Položka ve slovníku */
+        .word-item {
+            background-color: #1e1e24;
+            padding: 12px 16px;
+            border-radius: 10px;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 1px solid #29292e;
+        }
+
+        .word-info {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .word-meta {
+            font-size: 0.7rem;
+            color: #4895ef;
+            font-weight: bold;
+        }
+
+        .btn-delete {
+            background: none;
+            border: none;
+            font-size: 1.2rem;
+            cursor: pointer;
+            padding: 4px 8px;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>English Trainer</h1>
+
+    <!-- 1. SEKCE: Učení -->
+    <div id="sec-learn" class="section active">
+        <div class="card">
+            <div class="card-badges">
+                <span id="card-level" class="badge">A1</span>
+                <span id="card-pos" class="badge badge-pos">Podstatné jméno</span>
+            </div>
+            <div id="card-en" class="en" onclick="otocitKartu()">Zatím žádná slova</div>
+            <button class="btn-audio" onclick="prectiSlovo()">🔊 Přehrát poslech</button>
+            <div id="card-cz" class="cz" onclick="otocitKartu()"></div>
+            <div class="hint">Ťuknutím na text otočíš kartičku</div>
+        </div>
+
+        <div class="actions">
+            <button class="btn btn-wrong" onclick="odpoved(false)">Špatně</button>
+            <button class="btn btn-correct" onclick="odpoved(true)">Správně</button>
+        </div>
+    </div>
+
+    <!-- 2. SEKCE: Přidat slovo -->
+    <div id="sec-add" class="section">
+        <h2>Nové slovíčko</h2>
+        <br>
+        <div class="form-group">
+            <label>Anglicky</label>
+            <input type="text" id="input-en" placeholder="např. Apple">
+        </div>
+        <div class="form-group">
+            <label>Česky</label>
+            <input type="text" id="input-cz" placeholder="např. Jablko">
+        </div>
+        <div class="form-group">
+            <label>Úroveň pokročilosti</label>
+            <select id="input-level">
+                <option value="A1">A1 - Začátečník</option>
+                <option value="A2">A2 - Mírně pokročilý</option>
+                <option value="B1">B1 - Středně pokročilý</option>
+                <option value="B2">B2 - Vyšší střední</option>
+                <option value="C1">C1 - Pokročilý</option>
+                <option value="C2">C2 - Expert</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label>Slovní druh</label>
+            <select id="input-pos">
+                <option value="Podstatné jméno">Podstatné jméno</option>
+                <option value="Sloveso">Sloveso</option>
+                <option value="Přídavné jméno">Přídavné jméno</option>
+                <option value="Příslovce">Příslovce</option>
+            </select>
+        </div>
+        <button class="btn" onclick="pridatSlovo()">Uložit slovíčko</button>
+    </div>
+
+    <!-- 3. SEKCE: Slovník -->
+    <div id="sec-dict" class="section">
+        <h2>Moje slovíčka</h2>
+        <br>
+        <div id="word-list"></div>
+    </div>
+
+    <!-- Navigace pro mobil -->
+    <div class="nav">
+        <button onclick="zmenSekci('sec-learn', this)" class="active">🎴 Učení</button>
+        <button onclick="zmenSekci('sec-add', this)">➕ Přidat</button>
+        <button onclick="zmenSekci('sec-dict', this)">📖 Slovník</button>
+    </div>
+
+    <script>
+        let slovicka = JSON.parse(localStorage.getItem('slovicka')) || [
+            { en: "Apple", cz: "Jablko", level: "A1", pos: "Podstatné jméno", weight: 5 },
+            { en: "Car", cz: "Auto", level: "A1", pos: "Podstatné jméno", weight: 5 }
+        ];
+        
+        let aktualniIndex = 0;
+        let ukazujPreklad = false;
+
+        function ulozData() {
+            localStorage.setItem('slovicka', JSON.stringify(slovicka));
+        }
+
+        function zmenSekci(secId, btn) {
+            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('.nav button').forEach(b => b.classList.remove('active'));
+            document.getElementById(secId).classList.add('active');
+            btn.classList.add('active');
+            if(secId === 'sec-dict') zobrazSlovnik();
+            if(secId === 'sec-learn') zaktualizujKartu();
+        }
+
+        function otocitKartu() {
+            if (slovicka.length === 0) return;
+            ukazujPreklad = !ukazujPreklad;
+            document.getElementById('card-cz').style.display = ukazujPreklad ? 'block' : 'none';
+        }
+
+        function vyberyDalsiIndex() {
+            if (slovicka.length === 0) return 0;
+            if (slovicka.length === 1) return 0;
+
+            let celkovaVaha = slovicka.reduce((sum, item) => sum + (item.weight || 5), 0);
+            let nahodnaHodnota = Math.random() * celkovaVaha;
+
+            for (let i = 0; i < slovicka.length; i++) {
+                let vaha = slovicka[i].weight || 5;
+                if (nahodnaHodnota < vaha) {
+                    if (i === aktualniIndex && slovicka.length > 1) {
+                        return (i + 1) % slovicka.length;
+                    }
+                    return i;
+                }
+                nahodnaHodnota -= vaha;
+            }
+            return 0;
+        }
+
+        function zaktualizujKartu() {
+            ukazujPreklad = false;
+            document.getElementById('card-cz').style.display = 'none';
+            
+            if (slovicka.length > 0) {
+                document.getElementById('card-en').innerText = slovicka[aktualniIndex].en;
+                document.getElementById('card-cz').innerText = slovicka[aktualniIndex].cz;
+                document.getElementById('card-level').innerText = slovicka[aktualniIndex].level || "A1";
+                document.getElementById('card-pos').innerText = slovicka[aktualniIndex].pos || "Podstatné jméno";
+            } else {
+                document.getElementById('card-en').innerText = "Žádná slova";
+                document.getElementById('card-level').innerText = "";
+                document.getElementById('card-pos').innerText = "";
+            }
+        }
+
+        function odpoved(jeSpravne) {
+            if (slovicka.length === 0) return;
+
+            let slovo = slovicka[aktualniIndex];
+            if (!slovo.weight) slovo.weight = 5;
+
+            if (jeSpravne) {
+                slovo.weight = Math.max(1, slovo.weight - 2);
+            } else {
+                slovo.weight += 5;
+            }
+
+            ulozData();
+            aktualniIndex = vyberyDalsiIndex();
+            zaktualizujKartu();
+        }
+
+        function prectiSlovo() {
+            if (slovicka.length === 0) return;
+            const slovo = slovicka[aktualniIndex].en;
+
+            window.speechSynthesis.cancel();
+            
+            const utterance = new SpeechSynthesisUtterance(slovo);
+            utterance.lang = 'en-US';
+            utterance.rate = 0.9;
+
+            const voices = window.speechSynthesis.getVoices();
+            const nejlepsiHlas = voices.find(v => 
+                v.lang.startsWith('en') && (v.name.includes('Natural') || v.name.includes('Google') || v.name.includes('Premium'))
+            ) || voices.find(v => v.lang.startsWith('en'));
+
+            if (nejlepsiHlas) {
+                utterance.voice = nejlepsiHlas;
+            }
+
+            window.speechSynthesis.speak(utterance);
+        }
+
+        if (typeof speechSynthesis !== 'undefined' && speechSynthesis.onvoiceschanged !== undefined) {
+            speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices();
+        }
+
+        function pridatSlovo() {
+            const en = document.getElementById('input-en').value.trim();
+            const cz = document.getElementById('input-cz').value.trim();
+            const level = document.getElementById('input-level').value;
+            const pos = document.getElementById('input-pos').value;
+
+            if(en && cz) {
+                slovicka.push({ en, cz, level, pos, weight: 5 });
+                ulozData();
+                document.getElementById('input-en').value = '';
+                document.getElementById('input-cz').value = '';
+                alert('Slovíčko uloženo!');
+                zmenSekci('sec-learn', document.querySelectorAll('.nav button')[0]);
+            }
+        }
+
+        function smazatSlovo(index) {
+            slovicka.splice(index, 1);
+            ulozData();
+            zobrazSlovnik();
+            aktualniIndex = vyberyDalsiIndex();
+            zaktualizujKartu();
+        }
+
+        function zobrazSlovnik() {
+            const list = document.getElementById('word-list');
+            list.innerHTML = '';
+
+            if (slovicka.length === 0) {
+                list.innerHTML = '<p style="color: #a8a8b3;">Žádná slovíčka ve slovníku.</p>';
+                return;
+            }
+
+            slovicka.forEach((item, index) => {
+                list.innerHTML += `
+                    <div class="word-item">
+                        <div class="word-info">
+                            <span class="word-meta">${item.level || 'A1'} • ${item.pos || 'Podstatné jméno'}</span>
+                            <strong>${item.en}</strong>
+                            <span style="color: #a8a8b3; font-size: 0.85rem;">${item.cz}</span>
+                        </div>
+                        <button class="btn-delete" onclick="smazatSlovo(${index})">🗑️</button>
+                    </div>
+                `;
+            });
+        }
+
+        aktualniIndex = vyberyDalsiIndex();
+        zaktualizujKartu();
+    </script>
+</body>
+</html>
